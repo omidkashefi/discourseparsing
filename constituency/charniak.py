@@ -4,8 +4,9 @@ import sys, os
 import re
 import json
 import spacy
-from nltk.twitter.common import json2csv
 from bllipparser import RerankingParser
+from nltk.twitter.common import json2csv
+
 
 def findLinker(span, doc_id):
     global relations
@@ -98,11 +99,18 @@ for fname in f:
 
             #constituency parser
             rsentence = ""
-            for t in sent:
-                rsentence = rsentence + " " + t.text
 
-            rsentence = "<s> " + rsentence.rstrip(' ').lstrip(' ').rstrip("\n") + " </s>"
-            pcfg = rrp.simple_parse(str(rsentence))
+            for t in sent:
+                if not token.is_space:
+                    rsentence = rsentence + " " + t.text
+
+            rsentence = rsentence.strip().replace('\t', ' ').replace('\n', ' ')
+
+            if re.match("[a-z]+|[A-Z]+", rsentence) == None:
+                continue;
+
+            sys.stderr.write(str(filter(None, str(rsentence).split(' ')))+ '\n')
+            pcfg = rrp.simple_parse(filter(None, str(rsentence).split(' ')))
             #getting rid of (S1 )
             parsetree = pcfg[4:len(pcfg)-1]
 
