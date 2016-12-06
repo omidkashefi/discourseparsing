@@ -11,8 +11,9 @@ def init(doc):
 
     sentIndex = 0
     for sent in doc.sents:
-        if re.match("[a-z]+|[A-Z]+", sent.text) == None:
-            continue;
+
+        #if re.match("[a-z]+|[A-Z]+", sent.text) == None:
+        #    continue;
 
         tokenInSentIndex = 0
         for token in sent:
