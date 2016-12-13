@@ -42,7 +42,11 @@ def extractSpan(doc, span):
         rawText = rawText + str(doc.text[start:end]) + ";"
         for token in tokenDic:
             if start <= token.idx and token.idx <= end:
-                tokenList.insert(0, [token.idx, token.idx + len(token) if end != 0 else 0, tokenDic[token][0], tokenDic[token][2], tokenDic[token][1]])
+                #tokenList.insert(0, [token.idx, token.idx + len(token) if end != 0 else 0, tokenDic[token][0], tokenDic[token][2], tokenDic[token][1]])
+                tokenList.insert(0, tokenDic[token][0])
+
+    if len(tokenList) == 0:
+        tokenList.insert(0, -1)
 
     return {"CharacterSpanList": charSpan, "RawText": rawText.rstrip(';'), "TokenList": sorted(tokenList)}
 
@@ -56,7 +60,7 @@ def extractSpanFromText(doc, txt):
     for t in txt:
         start = doc.text.find(t)
         if start == -1:
-            start = doc.text.find(txt[0:min(len(txt), 10)])
+            start = doc.text.find(t[0:min(len(txt), 10)])
         end = start + len(t)
         rawText = rawText + t + ";"
 
@@ -64,7 +68,11 @@ def extractSpanFromText(doc, txt):
             charSpan.append([start, end])
             for token in tokenDic:
                 if start <= token.idx and token.idx <= end:
-                    tokenList.insert(0, [token.idx, token.idx + len(token) if end != 0 else 0, tokenDic[token][0], tokenDic[token][2], tokenDic[token][1]])
+                    #tokenList.insert(0, [token.idx, token.idx + len(token) if end != 0 else 0, tokenDic[token][0], tokenDic[token][2], tokenDic[token][1]])
+                    tokenList.insert(0, tokenDic[token][0])
+
+    if len(tokenList) == 0:
+        tokenList.insert(0, -1)
 
     return {"CharacterSpanList": charSpan, "RawText": rawText.rstrip(';'), "TokenList": sorted(tokenList)}
 
@@ -78,19 +86,27 @@ def main(argv):
         (_, _, filenames) = os.walk(os.path.join(argv[1],fname)).next()
 
         for input_file in filenames:
-            parsejson = []
             sys.stderr.write("Proccesing " + fname + input_file + "\n")
-            #input_file = "/home/kashefi/code/ldtb/raw/draft1/shadow_ninja.txt"  # sys.argv[1]
-            file_text = open(os.path.join(os.path.join(sys.argv[1], fname), input_file))
-            raw_file_text = open(os.path.join(sys.argv[1]+"../raw/"+fname, input_file)).read()
 
+            parsejson = []
             # output param: DocID
-            doc_id = os.path.basename(input_file) + "-" + fname.rstrip("/")
+            doc_id = os.path.basename(input_file.rstrip(".pipe")) + "-" + fname.rstrip("/")
+
+            annotated_file = os.path.join(os.path.join(sys.argv[1], fname), input_file)
+            if not os.path.isfile(annotated_file):
+                continue
+
+            raw_file = os.path.join(sys.argv[1]+"../raw/"+fname, input_file.rstrip(".pipe"))
+            if not os.path.isfile(raw_file):
+                continue
+
+            raw_file_text = open(raw_file).read()
 
             # NLP pipeline parse by spacy
             doc = nlp(unicode(raw_file_text))
             init(doc)
 
+            file_text = open(annotated_file)
             for line in file_text:
                 id += 1
 
@@ -101,13 +117,13 @@ def main(argv):
 
                     txt = parts[24].split(';')
                     arg1 = extractSpanFromText(doc, txt)
-                    if len(arg1["CharacterSpanList"]) == 0:
-                        continue
+                    #if len(arg1["CharacterSpanList"]) == 0:
+                    #    continue
 
                     txt2 = parts[34].split(';')
                     arg2 = extractSpanFromText(doc, txt2)
-                    if len(arg2["CharacterSpanList"]) == 0:
-                        continue
+                    #if len(arg2["CharacterSpanList"]) == 0:
+                    #    continue
 
                     #no connective fot EntRel
                     span = [[0, 0]]
@@ -167,13 +183,13 @@ def main(argv):
 
                     txt = parts[24].split(';')
                     arg1 = extractSpanFromText(doc, txt)
-                    if len(arg1["CharacterSpanList"]) == 0:
-                        continue
+                    #if len(arg1["CharacterSpanList"]) == 0:
+                    #    continue
 
                     txt2 = parts[34].split(';')
                     arg2 = extractSpanFromText(doc, txt2)
-                    if len(arg2["CharacterSpanList"]) == 0:
-                        continue
+                    #if len(arg2["CharacterSpanList"]) == 0:
+                    #    continue
 
                     #no connective
                     span = [[0, 0]]
@@ -195,18 +211,24 @@ def main(argv):
                     span = []
                     spanStr = parts[22].split(';')
                     for s in spanStr:
-                        start = int(s.split('..')[0])
-                        end = int(s.split('..')[1])
-                        span.append([start, end])
+                        if s == '':
+                            span = [[0, 0]]
+                        else:
+                            start = int(s.split('..')[0])
+                            end = int(s.split('..')[1])
+                            span.append([start, end])
 
                     arg1 = extractSpan(doc, span)
 
                     span = []
                     spanStr = parts[32].split(';')
                     for s in spanStr:
-                        start = int(s.split('..')[0])
-                        end = int(s.split('..')[1])
-                        span.append([start, end])
+                        if s == '':
+                            span = [[0, 0]]
+                        else:
+                            start = int(s.split('..')[0])
+                            end = int(s.split('..')[1])
+                            span.append([start, end])
 
                     arg2 = extractSpan(doc, span)
 
